@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=change-me-in-production
+      - ENCRYPTION_KEY=32-byte-encryption-key-here!!
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ../backend:/app
+      - ../backups:/app/backups
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
