@@ -13,8 +13,12 @@ from routers.auth import router as auth_router
 from routers.connections import router as connections_router
 from routers.sql import router as sql_router
 
-# AI / 备份 / 任务 / 监控 / 告警 路由（Phase 2-4 实现）
-# from routers.ai import router as ai_router
+# Phase 2-4 新增路由
+from routers.backups import router as backups_router
+from routers.monitor import router as monitor_router
+from routers.tasks import router as tasks_router
+from routers.ai import router as ai_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     description="私有 MySQL 数据库管理平台 API",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan
 )
 
@@ -45,9 +49,13 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(auth_router)
-app.include_router(connections_router)
-app.include_router(sql_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(connections_router, prefix="/api")
+app.include_router(sql_router, prefix="/api")
+app.include_router(backups_router)
+app.include_router(monitor_router)
+app.include_router(tasks_router)
+app.include_router(ai_router)
 
 # 健康检查
 @app.get("/health")
@@ -59,7 +67,7 @@ async def root():
     return {
         "message": "RaoMySQL API",
         "docs": "/docs",
-        "version": "0.1.0"
+        "version": "1.0.0"
     }
 
 if __name__ == "__main__":
