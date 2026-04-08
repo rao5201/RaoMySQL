@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Layout, Menu, theme, Badge, Dropdown, Avatar, Space } from 'antd'
-import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined } from '@ant-design/icons'
+import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined, FileSearchOutlined, ExportOutlined } from '@ant-design/icons'
 import zhCN from 'antd/locale/zh_CN'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -11,17 +11,21 @@ import Backups from './pages/Backups'
 import Tasks from './pages/Tasks'
 import AIAssistant from './pages/AIAssistant'
 import Settings from './pages/Settings'
+import AuditLog from './pages/AuditLog'
+import DataExport from './pages/DataExport'
 
 const { Header, Sider, Content } = Layout
 
 const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
-  { key: '/connections', icon: <DatabaseOutlined />, label: '数据库连接' },
-  { key: '/sql', icon: <TableOutlined />, label: 'SQL 编辑器' },
-  { key: '/backups', icon: <AlertOutlined />, label: '备份中心' },
-  { key: '/tasks', icon: <SettingOutlined />, label: '定时任务' },
-  { key: '/ai', icon: <RobotOutlined />, label: 'AI 助手' },
-  { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
+  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+  { key: '/connections', icon: <DatabaseOutlined />, label: 'Connections' },
+  { key: '/sql', icon: <TableOutlined />, label: 'SQL Editor' },
+  { key: '/backups', icon: <AlertOutlined />, label: 'Backups' },
+  { key: '/tasks', icon: <SettingOutlined />, label: 'Tasks' },
+  { key: '/ai', icon: <RobotOutlined />, label: 'AI Assistant' },
+  { key: '/export', icon: <ExportOutlined />, label: 'Data Export' },
+  { key: '/audit', icon: <FileSearchOutlined />, label: 'Audit Log' },
+  { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
 ]
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -29,17 +33,17 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   const userMenu = {
     items: [
-      { key: 'profile', icon: <UserOutlined />, label: '个人资料' },
+      { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
       { type: 'divider' as const },
-      { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
+      { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' },
     ]
   }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark">
+      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark" width={220}>
         <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 700 }}>
-          {collapsed ? 'RM' : '🔒 RaoMySQL'}
+          {collapsed ? 'RM' : 'RaoMySQL'}
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={['/dashboard']} items={menuItems} onClick={({ key }) => window.location.hash = key} />
       </Sider>
@@ -77,6 +81,8 @@ function App() {
                   <Route path="/backups" element={<Backups />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/ai" element={<AIAssistant />} />
+                  <Route path="/export" element={<DataExport />} />
+                  <Route path="/audit" element={<AuditLog />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
