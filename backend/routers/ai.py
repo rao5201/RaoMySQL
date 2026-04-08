@@ -1,231 +1,169 @@
-"""
-RaoMySQL - AI 助手路由
-自然语言转 SQL、慢查询分析、智能告警
-"""
-
-from fastapi import APIRouter, Depends
+"""RaoMySQL AI Router v1.1 - Real LLM support (OpenAI/Ollama)"""
+import os, json
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
 from backend.database.init_db import get_db
+from backend.database.models import DbConnection
 from backend.routers.auth import get_current_user
-import os
+from backend.utils.crypto import decrypt_password
+from backend.services.mysql_client import MySQLClient
 
-router = APIRouter(prefix="/api/ai", tags=["AI助手"])
-
+router = APIRouter(prefix="/api/ai", tags=["AI"])
 
 class NL2SQLRequest(BaseModel):
     question: str
-    connection_id: Optional[int] = None
+    connection_id: int
 
-
-class NL2SQLResponse(BaseModel):
-    sql: str
-    explanation: str
-    confidence: float
-
-
-class AnalyzeSlowQueryRequest(BaseModel):
+class AnalyzeSlowRequest(BaseModel):
     sql: str
     connection_id: Optional[int] = None
 
-
-class AIChatRequest(BaseModel):
+class ChatRequest(BaseModel):
     message: str
-    context: Optional[dict] = None
+    connection_id: Optional[int] = None
 
-
-class AIChatResponse(BaseModel):
-    response: str
-    suggestions: Optional[List[str]] = None
-
-
-# ==================== 自然语言转 SQL ====================
-
-@router.post("/nl2sql", response_model=NL2SQLResponse)
-async def natural_language_to_sql(
-    request: NL2SQLRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """自然语言转 SQL"""
-    # TODO: 接入 LangChain + OpenAI 实现
-    # 1. 获取数据库表结构
-    # 2. 使用 LLM 生成 SQL
-    # 3. 返回 SQL 和解释
-    
-    # 模拟返回
-    return NL2SQLResponse(
-        sql="SELECT * FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
-        explanation="查询过去7天内注册的用户",
-        confidence=0.85
-    )
-
-
-# ==================== 慢查询分析 ====================
-
-@router.post("/analyze-slow")
-async def analyze_slow_query(
-    request: AnalyzeSlowQueryRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """分析慢查询并给出优化建议"""
-    # TODO: 接入 LangChain 分析慢查询
-    
-    return {
-        "sql": request.sql,
-        "analysis": {
-            "type": "全表扫描",
-            "suggestions": [
-                "建议在 status 字段上添加索引",
-                "考虑使用覆盖索引避免回表",
-                "可以将 LIMIT 分页改为游标分页"
-            ],
-            "estimated_improvement": "70%"
-        },
-        "optimized_sql": "SELECT * FROM orders FORCE INDEX(idx_status) WHERE status = 'completed'"
-    }
-
-
-# ==================== AI 对话 ====================
-
-@router.post("/chat", response_model=AIChatResponse)
-async def ai_chat(
-    request: AIChatRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """AI 对话（智能助手）"""
-    # TODO: 接入 LangChain 实现对话
-    
-    message = request.message.lower()
-    
-    if "查询" in message or "select" in message:
-        response = "我可以帮你将自然语言转换为 SQL。请描述你想要查询的数据，例如：'查询过去一周的订单数量'"
-    elif "优化" in message or "slow" in message:
-        response = "我可以帮你分析慢查询并提供优化建议。请提供需要分析的 SQL 语句。"
-    elif "备份" in message:
-        response = "我可以帮你创建数据库备份。请在备份页面选择要备份的数据库连接。"
-    elif "监控" in message:
-        response = "我可以帮你分析数据库监控数据。你想查看哪个连接的状态？"
-    else:
-        response = "你好！我是 RaoMySQL AI 助手，可以帮你：\n1. 自然语言转 SQL\n2. 慢查询分析\n3. 数据库状态查询\n4. 操作建议"
-    
-    return AIChatResponse(
-        response=response,
-        suggestions=[
-            "帮我查询过去7天的销售数据",
-            "分析这个慢查询",
-            "查看数据库健康状态"
-        ]
-    )
-
-
-# ==================== AI 配置 ====================
-
-class AIConfig(BaseModel):
-    provider: str  # openai/ollama
+class AIConfigModel(BaseModel):
+    provider: str = "openai"
     api_key: Optional[str] = None
     endpoint: Optional[str] = None
     model: str = "gpt-4"
 
+def _get_provider():
+    return os.getenv("AI_PROVIDER", "openai")
 
-@router.get("/config")
-async def get_ai_config(
-    current_user: dict = Depends(get_current_user)
-):
-    """获取 AI 配置"""
-    # 从环境变量或配置文件读取
-    return {
-        "provider": os.getenv("AI_PROVIDER", "openai"),
-        "model": os.getenv("AI_MODEL", "gpt-4"),
-        "endpoint": os.getenv("AI_ENDPOINT", ""),
-        "enabled": bool(os.getenv("OPENAI_API_KEY", ""))
-    }
+def _get_model():
+    return os.getenv("AI_MODEL", "gpt-4")
 
+def _get_endpoint():
+    return os.getenv("AI_ENDPOINT", "")
 
-@router.put("/config")
-async def update_ai_config(
-    config: AIConfig,
-    current_user: dict = Depends(get_current_user)
-):
-    """更新 AI 配置（仅管理员）"""
-    if current_user.get("role") != "admin":
-        return {"error": "仅管理员可配置"}
-    
-    # TODO: 保存配置到文件或数据库
-    return {"message": "配置已更新", "config": config.dict()}
+def _get_key():
+    return os.getenv("OPENAI_API_KEY", "")
 
+def _get_conn_creds(conn, db):
+    pw = decrypt_password(conn.password_enc) if conn.password_enc else ""
+    return {"host": conn.host, "port": conn.port, "user": conn.username,
+            "pw": pw, "database": conn.database}
 
-# ==================== 智能告警 ====================
+async def _call_llm(prompt, system="You are a helpful database assistant."):
+    import httpx
+    provider = _get_provider()
+    model = _get_model()
+    if provider == "ollama":
+        ep = _get_endpoint() or "http://localhost:11434"
+        async with httpx.AsyncClient(timeout=60) as c:
+            r = await c.post(f"{ep}/api/chat", json={"model": model,
+                "messages": [{"role":"system","content":system},{"role":"user","content":prompt}]})
+            r.raise_for_status()
+            return r.json()["message"]["content"]
+    else:
+        key = _get_key()
+        if not key: raise HTTPException(503, "OPENAI_API_KEY not set")
+        ep = _get_endpoint() or "https://api.openai.com/v1"
+        async with httpx.AsyncClient(timeout=60) as c:
+            r = await c.post(f"{ep}/chat/completions",
+                headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},
+                json={"model": model, "messages": [
+                    {"role":"system","content":system},{"role":"user","content":prompt}]})
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"]
 
-@router.post("/analyze-alert")
-async def analyze_alert(
-    alert_data: dict,
-    current_user: dict = Depends(get_current_user)
-):
-    """AI 分析告警并给出建议"""
-    # TODO: 使用 AI 分析告警原因和解决方案
-    
-    level = alert_data.get("level", "info")
-    title = alert_data.get("title", "")
-    
-    analysis = {
-        "critical": {
-            "reason": "数据库连接数接近上限，可能导致服务不可用",
-            "actions": [
-                "立即检查连接泄漏",
-                "增加 max_connections 配置",
-                "重启占用连接的应用"
-            ]
-        },
-        "warning": {
-            "reason": "磁盘空间使用率较高",
-            "actions": [
-                "清理不必要的日志文件",
-                "删除过期备份",
-                "考虑扩容"
-            ]
-        },
-        "info": {
-            "reason": "常规监控信息",
-            "actions": ["无需处理"]
-        }
-    }
-    
-    return analysis.get(level, analysis["info"])
+@router.post("/nl2sql")
+async def nl2sql(req: NL2SQLRequest, current_user=Depends(get_current_user),
+                 db=Depends(get_db)):
+    conn = db.query(DbConnection).filter(
+        DbConnection.id==req.connection_id,
+        DbConnection.user_id==current_user.get("id")).first()
+    if not conn: raise HTTPException(404,"connection not found")
+    cr = _get_conn_creds(conn, db)
+    schema = await MySQLClient.get_schema(
+        req.connection_id, cr["host"], cr["port"], cr["user"], cr["pw"], cr["database"])
+    prompt = f"Given this database schema:\n{schema}\n\nConvert to SQL: {req.question}\nReturn ONLY the SQL, no explanation."
+    try:
+        sql = await _call_llm(prompt, "You are a SQL expert. Return ONLY valid MySQL SQL.")
+        return {"sql": sql.strip(), "explanation": f"Generated from schema of {cr['database']}",
+                "confidence": 0.85, "schema_used": schema[:200]+"..."}
+    except Exception as e:
+        raise HTTPException(500, f"LLM error: {e}")
 
+@router.post("/analyze-slow")
+async def analyze_slow(req: AnalyzeSlowRequest, current_user=Depends(get_current_user)):
+    prompt = f"""Analyze this MySQL query for performance issues and suggest optimizations.
+Return JSON with keys: type, suggestions (array), estimated_improvement, optimized_sql.
 
-# ==================== SQL 审查 ====================
+Query: {req.sql}"""
+    try:
+        result = await _call_llm(prompt, "You are a MySQL performance expert. Return valid JSON only.")
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return {"type": "analysis", "suggestions": [result],
+                    "estimated_improvement": "unknown", "optimized_sql": req.sql}
+    except Exception as e:
+        raise HTTPException(500, f"LLM error: {e}")
+
+@router.post("/chat")
+async def ai_chat(req: ChatRequest, current_user=Depends(get_current_user),
+                  db=Depends(get_db)):
+    system = "You are RaoMySQL AI assistant. Help users with database queries, optimization, and management. Be concise."
+    if req.connection_id:
+        conn = db.query(DbConnection).filter(
+            DbConnection.id==req.connection_id,
+            DbConnection.user_id==current_user.get("id")).first()
+        if conn:
+            cr = _get_conn_creds(conn, db)
+            schema = await MySQLClient.get_schema(
+                req.connection_id, cr["host"], cr["port"], cr["user"], cr["pw"], cr["database"])
+            status = await MySQLClient.get_status(
+                req.connection_id, cr["host"], cr["port"], cr["user"], cr["pw"], cr["database"])
+            system += f"\nActive DB: {cr['database']}\nStatus: {json.dumps(status, default=str)}\nSchema:\n{schema[:500]}"
+    try:
+        resp = await _call_llm(req.message, system)
+        return {"response": resp}
+    except Exception as e:
+        return {"response": f"AI unavailable: {e}. Please check AI config in /api/ai/config"}
 
 @router.post("/review-sql")
-async def review_sql(
-    sql: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """SQL 语句审查（执行前风险评估）"""
-    # TODO: 使用 AI 分析 SQL 风险
-    
-    sql_upper = sql.upper().strip()
-    
-    # 简单规则判断
-    if "DROP" in sql_upper or "TRUNCATE" in sql_upper:
-        risk = "high"
-        message = "检测到危险操作，建议仔细确认"
-    elif "DELETE" in sql_upper and "WHERE" not in sql_upper:
-        risk = "high"
-        message = "检测到无 WHERE 条件的 DELETE，可能导致数据清空"
-    elif "UPDATE" in sql_upper and "WHERE" not in sql_upper:
-        risk = "high"
-        message = "检测到无 WHERE 条件的 UPDATE，可能导致全表更新"
-    else:
-        risk = "low"
-        message = "SQL 语句看起来正常"
-    
-    return {
-        "sql": sql,
-        "risk": risk,
-        "message": message,
-        "suggestions": [
-            "建议先在测试环境执行",
-            "确保有数据备份"
-        ]
-    }
+async def review_sql(sql: str, current_user=Depends(get_current_user)):
+    su = sql.upper().strip()
+    rules = []
+    if "DROP" in su or "TRUNCATE" in su: rules.append("DANGER: DROP/TRUNCATE detected")
+    if "DELETE" in su and "WHERE" not in su: rules.append("DANGER: DELETE without WHERE")
+    if "UPDATE" in su and "WHERE" not in su: rules.append("DANGER: UPDATE without WHERE")
+    if "SELECT *" in su: rules.append("WARN: SELECT * may return unnecessary columns")
+    if "LIKE '%" in su: rules.append("WARN: Leading wildcard prevents index use")
+    risk = "high" if any("DANGER" in r for r in rules) else ("medium" if rules else "low")
+    if rules:
+        prompt = f"Review this SQL for risks:\n{sql}\nRules found: {rules}\nGive brief additional suggestions."
+        try:
+            ai_advice = await _call_llm(prompt, "SQL security reviewer. Be brief.")
+            rules.append(f"AI: {ai_advice[:200]}")
+        except: pass
+    return {"sql": sql, "risk": risk, "rules": rules}
+
+@router.post("/analyze-alert")
+async def analyze_alert(data: dict, current_user=Depends(get_current_user)):
+    prompt = f"Analyze this database alert and suggest actions: {json.dumps(data)}"
+    try:
+        resp = await _call_llm(prompt, "Database operations expert. Give actionable steps.")
+        return {"analysis": resp}
+    except Exception as e:
+        return {"analysis": f"AI unavailable: {e}"}
+
+@router.get("/config")
+async def get_ai_config(current_user=Depends(get_current_user)):
+    return {"provider": _get_provider(), "model": _get_model(),
+            "endpoint": _get_endpoint(), "enabled": bool(_get_key())}
+
+@router.put("/config")
+async def update_ai_config(cfg: AIConfigModel, current_user=Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(403, "admin only")
+    if cfg.api_key:
+        os.environ["OPENAI_API_KEY"] = cfg.api_key
+        os.environ["AI_PROVIDER"] = cfg.provider
+        os.environ["AI_MODEL"] = cfg.model
+        if cfg.endpoint: os.environ["AI_ENDPOINT"] = cfg.endpoint
+    return {"message": "config updated (runtime only, set env vars for persistence)"}

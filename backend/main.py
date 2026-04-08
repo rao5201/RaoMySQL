@@ -1,9 +1,8 @@
-"""RaoMySQL 后端服务入口"""
+"""RaoMySQL v1.2.0 Backend Entry"""
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from config import settings
@@ -12,34 +11,28 @@ from services.mysql_client import mysql_client
 from routers.auth import router as auth_router
 from routers.connections import router as connections_router
 from routers.sql import router as sql_router
-
-# Phase 2-4 新增路由
 from routers.backups import router as backups_router
 from routers.monitor import router as monitor_router
 from routers.tasks import router as tasks_router
 from routers.ai import router as ai_router
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动
     await init_db()
     settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[RaoMySQL] 服务启动成功，访问 http://localhost:8000")
-    print(f"[RaoMySQL] API 文档 http://localhost:8000/docs")
+    print(f"[RaoMySQL v1.2.0] http://localhost:{settings.PORT}")
+    print(f"[RaoMySQL v1.2.0] API Docs http://localhost:{settings.PORT}/docs")
     yield
-    # 关闭：关闭所有 MySQL 连接池
     await mysql_client.close_all()
-    print("[RaoMySQL] 服务已关闭")
+    print("[RaoMySQL] shutdown")
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="私有 MySQL 数据库管理平台 API",
-    version="1.0.0",
+    description="RaoMySQL v1.2.0 - Private MySQL Management + Enterprise CMS",
+    version="1.2.0",
     lifespan=lifespan
 )
 
-# CORS：允许前端本地开发
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,7 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 注册路由
 app.include_router(auth_router, prefix="/api")
 app.include_router(connections_router, prefix="/api")
 app.include_router(sql_router, prefix="/api")
@@ -57,19 +49,14 @@ app.include_router(monitor_router)
 app.include_router(tasks_router)
 app.include_router(ai_router)
 
-# 健康检查
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": settings.APP_NAME}
+    return {"status": "ok", "app": settings.APP_NAME, "version": "1.2.0"}
 
 @app.get("/")
 async def root():
-    return {
-        "message": "RaoMySQL API",
-        "docs": "/docs",
-        "version": "1.0.0"
-    }
+    return {"message": "RaoMySQL API v1.2.0", "docs": "/docs", "version": "1.2.0"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=settings.PORT, reload=True)
