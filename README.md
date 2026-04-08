@@ -1,19 +1,24 @@
-# RaoMySQL v1.2.0
+# RaoMySQL
 
-> Private MySQL Database Management Platform + Enterprise CMS
-> Author: [Rao](https://github.com/rao5201)
-> License: MIT
+Private MySQL Database Management Platform
+
+## Version
+**v1.3.0** (2026-04-08)
 
 ## Features
+- Database connection management (CRUD)
+- SQL execution
+- Backup & restore
+- User permission management
+- Monitoring & alerts
+- AI integration (NL2SQL, slow query analysis, SQL review)
+- Unified user system across RaoMySQL/RaoCMS/RaoFileManager
 
-| Module | Description |
-|--------|------------|
-| MySQL Management | Connection pool, SQL editor, credential encryption |
-| Backup and Restore | DB dump with checksum verification |
-| Monitoring | Real-time SHOW STATUS, slow queries, capacity |
-| Scheduled Tasks | Cron-based task scheduling |
-| AI Assistant | NL2SQL, slow query analysis (OpenAI/Ollama) |
-| CMS Backend | Multi-role, article/user/supplier/product/finance |
+## Tech Stack
+- Backend: Python FastAPI + SQLAlchemy
+- Frontend: React 18 + TypeScript + Vite + Ant Design
+- Database: SQLite (metadata) + MySQL (target)
+- Deployment: Docker + Nginx
 
 ## Quick Start
 
@@ -23,31 +28,24 @@ cd backend
 pip install -r requirements.txt
 python main.py
 
-# Frontend
+# Frontend  
 cd frontend
 npm install
 npm run dev
 `
 
-## Tech Stack
-
-- Backend: Python 3.14 / FastAPI / SQLAlchemy / aiomysql
-- Frontend: React 19 / Vite / Ant Design 6 / TypeScript
-- Database: SQLite (meta) + MySQL (managed)
-- Security: JWT + AES-256-GCM + RBAC
-
-## Project Structure
-
+## Docker
+`ash
+docker-compose up -d
 `
-RaoMySQL/
-  backend/
-    main.py
-    config.py
-    database/
-    routers/
-    services/
-    utils/
-  frontend/
-    src/pages/
-  docker/
-`
+
+## Default Admin
+- Username: admin
+- Password: admin123
+
+## Related Projects
+- RaoCMS - Enterprise CMS/ERP
+- RaoFileManager - File Management System
+
+---
+Unified user system connects RaoMySQL, RaoCMS, RaoFileManager.

@@ -1,33 +1,23 @@
-# RaoMySQL Changelog
+# RaoMySQL/Changelog.md
 
-## [1.2.0] - 2026-04-08
+## v1.3.0 - 统一用户体系版本 (2026-04-08)
 
-### Enhanced
-- MySQL Client v1.1: Real SHOW STATUS metrics, slow query detection, capacity analysis
-- Backup Service v1.1: Real DB dump execution with async tasks, SHA256 checksum, file download
-- Monitor v1.1: Live metrics QPS buffer pool threads
-- AI v1.1: LLM support OpenAI Ollama NL2SQL
+### 新功能
+- 统一用户认证系统
+- 跨系统单点登录
+- 统一API Gateway
+- 跨系统数据关联
 
-### Added
-- Audit Log: Full operation tracking with query/stats/cleanup APIs
-- Data Export: CSV/JSON export for any table with column/where filters
-- Docker: Updated configs with nginx reverse proxy, health checks, named volumes
-- Deployment: DEPLOY.md guide, .env.example template
+### 技术升级
+- unified_auth.py
+- unified_models.py  
+- cross_links.py
+- gateway.py
 
-### Technical
-- Python 3.14 FastAPI SQLAlchemy aiomysql
-- React 19 Vite Ant Design 6 TypeScript
+## v1.2.0 - AI与监控版本 (2026-04-08)
+- AI助手/设置页面
+- 审计日志看板
+- 数据导出
 
-## [1.0.0] - 2026-04-06
-
-### Added
-- RaoCMS Enterprise Backend Multi-role permissions
-- Article User Supplier Product Finance modules
-- Backup Monitor Tasks AI Assistant features
-
-## [0.1.0] - 2026-04-05
-
-### Added
-- Initial framework FastAPI JWT MySQL connections
-- Credential storage
-- Docker deployment
+## v1.1.0 - 企业CMS版本 (2026-04-06)
+## v1.0.0 - 初始版本 (2026-04-05)
