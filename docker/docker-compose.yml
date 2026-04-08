@@ -10,17 +10,28 @@ services:
       - SECRET_KEY=change-me-in-production
       - ENCRYPTION_KEY=32-byte-encryption-key-here!!
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - AI_MODEL=${AI_MODEL:-gpt-4}
+      - AI_ENDPOINT=${AI_ENDPOINT:-}
     volumes:
-      - ../backend:/app
-      - ../backups:/app/backups
+      - backend_data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  backend_data:

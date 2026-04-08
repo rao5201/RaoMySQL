@@ -1,5 +1,6 @@
-"""初始化 SQLite 数据库 + 提供 get_db 依赖"""
+"""Initialize SQLite + provide get_db dependency"""
 from database.models import Base
+from database.audit_log import AuditLog  # ensure table creation
 from config import settings
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -18,7 +19,7 @@ async def get_db():
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print(f"[RaoMySQL] 数据库初始化完成: {settings.DATABASE_URL}")
+    print(f"[RaoMySQL] DB initialized: {settings.DATABASE_URL}")
 
 if __name__ == "__main__":
     asyncio.run(init_db())

@@ -15,6 +15,8 @@ from routers.backups import router as backups_router
 from routers.monitor import router as monitor_router
 from routers.tasks import router as tasks_router
 from routers.ai import router as ai_router
+from routers.audit import router as audit_router
+from routers.export import router as export_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,6 +50,8 @@ app.include_router(backups_router)
 app.include_router(monitor_router)
 app.include_router(tasks_router)
 app.include_router(ai_router)
+app.include_router(audit_router)
+app.include_router(export_router)
 
 @app.get("/health")
 async def health():
