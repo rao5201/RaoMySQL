@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Layout, Menu, theme, Badge, Dropdown, Avatar, Space } from 'antd'
-import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined, FileSearchOutlined, ExportOutlined } from '@ant-design/icons'
+import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined, FileSearchOutlined, ExportOutlined, ExperimentOutlined } from '@ant-design/icons'
 import zhCN from 'antd/locale/zh_CN'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -13,6 +13,8 @@ import AIAssistant from './pages/AIAssistant'
 import Settings from './pages/Settings'
 import AuditLog from './pages/AuditLog'
 import DataExport from './pages/DataExport'
+import AIServices from './pages/AIServices'
+import AISettings from './pages/AISettings'
 
 const { Header, Sider, Content } = Layout
 
@@ -22,7 +24,10 @@ const menuItems = [
   { key: '/sql', icon: <TableOutlined />, label: 'SQL Editor' },
   { key: '/backups', icon: <AlertOutlined />, label: 'Backups' },
   { key: '/tasks', icon: <SettingOutlined />, label: 'Tasks' },
-  { key: '/ai', icon: <RobotOutlined />, label: 'AI Assistant' },
+  { type: 'divider' as const },
+  { key: '/ai', icon: <RobotOutlined />, label: 'AI Services' },
+  { key: '/ai-settings', icon: <ExperimentOutlined />, label: 'AI Settings' },
+  { type: 'divider' as const },
   { key: '/export', icon: <ExportOutlined />, label: 'Data Export' },
   { key: '/audit', icon: <FileSearchOutlined />, label: 'Audit Log' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
@@ -80,7 +85,8 @@ function App() {
                   <Route path="/sql" element={<SqlEditor />} />
                   <Route path="/backups" element={<Backups />} />
                   <Route path="/tasks" element={<Tasks />} />
-                  <Route path="/ai" element={<AIAssistant />} />
+                  <Route path="/ai" element={<AIServices />} />
+                  <Route path="/ai-settings" element={<AISettings />} />
                   <Route path="/export" element={<DataExport />} />
                   <Route path="/audit" element={<AuditLog />} />
                   <Route path="/settings" element={<Settings />} />
