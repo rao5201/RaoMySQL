@@ -1,4 +1,4 @@
-"""RaoMySQL v1.2.0 Backend Entry"""
+"""RaoMySQL v1.3.0 Backend Entry"""
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -9,6 +9,7 @@ from config import settings
 from database.init_db import init_db
 from services.mysql_client import mysql_client
 from routers.auth import router as auth_router
+from routers.users import router as users_router
 from routers.connections import router as connections_router
 from routers.sql import router as sql_router
 from routers.backups import router as backups_router
@@ -22,16 +23,16 @@ from routers.export import router as export_router
 async def lifespan(app: FastAPI):
     await init_db()
     settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[RaoMySQL v1.2.0] http://localhost:{settings.PORT}")
-    print(f"[RaoMySQL v1.2.0] API Docs http://localhost:{settings.PORT}/docs")
+    print(f"[RaoMySQL v1.3.0] http://localhost:{settings.PORT}")
+    print(f"[RaoMySQL v1.3.0] API Docs http://localhost:{settings.PORT}/docs")
     yield
     await mysql_client.close_all()
     print("[RaoMySQL] shutdown")
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="RaoMySQL v1.2.0 - Private MySQL Management + Enterprise CMS",
-    version="1.2.0",
+    description="RaoMySQL v1.3.0 - Private MySQL Management + Enterprise CMS + User Management",
+    version="1.3.0",
     lifespan=lifespan
 )
 
@@ -44,6 +45,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(users_router)
 app.include_router(connections_router, prefix="/api")
 app.include_router(sql_router, prefix="/api")
 app.include_router(backups_router)
@@ -55,11 +57,11 @@ app.include_router(export_router)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": settings.APP_NAME, "version": "1.2.0"}
+    return {"status": "ok", "app": settings.APP_NAME, "version": "1.3.0"}
 
 @app.get("/")
 async def root():
-    return {"message": "RaoMySQL API v1.2.0", "docs": "/docs", "version": "1.2.0"}
+    return {"message": "RaoMySQL API v1.3.0", "docs": "/docs", "version": "1.3.0"}
 
 if __name__ == "__main__":
     import uvicorn
