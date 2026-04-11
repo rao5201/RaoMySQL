@@ -1,7 +1,7 @@
 """Initialize SQLite + provide get_db dependency"""
-from database.models import Base
-from database.audit_log import AuditLog  # ensure table creation
-from config import settings
+from .models import Base
+from .audit_log import AuditLog  # ensure table creation
+from backend.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import asyncio

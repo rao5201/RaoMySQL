@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from backend.database.cms_models import SysUser, PortalUser, OperationLog
-from backend.routers.cms_auth import get_current_user, require_admin, UserRole, Permission, require_permissions, get_password_hash
+from .cms_auth import get_current_user, require_admin, UserRole, Permission, require_permissions, get_password_hash
 from backend.database.init_db import get_db
 
 router = APIRouter(prefix="/api", tags=["用户管理"])

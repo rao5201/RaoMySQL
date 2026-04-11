@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
 from backend.database.cms_models import FinanceRecord, FinanceDailyStat, SalesRecord
-from backend.routers.cms_auth import get_current_user, require_finance, UserRole, Permission, require_permissions
+from .cms_auth import get_current_user, require_finance, UserRole, Permission, require_permissions
 from backend.database.init_db import get_db
 from sqlalchemy import func, cast, Date
 

@@ -23,14 +23,14 @@ def get_db():
 
 def init_db():
     """初始化 MySQL 管理数据库"""
-    from backend.database.models import Base
+    from .models import Base
     Base.metadata.create_all(bind=engine)
 
 
 def init_cms_db():
     """初始化 CMS 数据库"""
     os.makedirs("data", exist_ok=True)
-    from backend.database.cms_models import Base
+    from backend.cms_models import Base
     Base.metadata.create_all(bind=engine)
 
 
@@ -38,7 +38,7 @@ def init_cms_db():
 def create_default_admin():
     """创建默认管理员账号"""
     from backend.routers.cms_auth import get_password_hash
-    from backend.database.cms_models import SysUser
+    from backend.cms_models import SysUser
     
     db = SessionLocal()
     try:

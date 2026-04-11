@@ -2,7 +2,7 @@
 import json
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
-from backend.database.init_db import Base
+from .init_db import Base
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

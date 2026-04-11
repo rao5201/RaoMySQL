@@ -10,7 +10,7 @@ from typing import Optional, List
 from datetime import datetime
 from backend.database.init_db import get_db
 from backend.database.models import ScheduledTask, TaskRun
-from backend.routers.auth import get_current_user
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/tasks", tags=["定时任务"])
 

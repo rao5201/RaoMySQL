@@ -14,7 +14,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from .unified_models import User, UserRole, UserSession
-from .init_db import get_db
+from backend.database.init_db import get_db
 
 # Config
 SECRET_KEY = os.getenv("UNIFIED_SECRET_KEY", "rao-unified-secret-key-change-in-production-2026")

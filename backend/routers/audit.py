@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from backend.database.init_db import get_db
 from backend.database.audit_log import AuditLog
-from backend.routers.auth import get_current_user
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/audit", tags=["Audit"])
 

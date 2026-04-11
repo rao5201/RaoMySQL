@@ -4,11 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional, List
-from database.init_db import get_db
-from database.models import DbConnection, User
-from routers.auth import get_current_user
-from services.mysql_client import mysql_client
-from utils.crypto import encrypt_password, decrypt_password
+from backend.database.init_db import get_db
+from backend.database.models import DbConnection, User
+from .auth import get_current_user
+from backend.services.mysql_client import mysql_client
+from backend.utils.crypto import encrypt_password, decrypt_password
 
 router = APIRouter(prefix="/api/connections", tags=["数据库连接"])
 

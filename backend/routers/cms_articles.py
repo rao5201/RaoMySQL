@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from backend.database.cms_models import Article, Category, ArticleAudit, SysUser
-from backend.routers.cms_auth import get_current_user, require_staff, UserRole, Permission, require_permissions
+from .cms_auth import get_current_user, require_staff, UserRole, Permission, require_permissions
 from backend.database.init_db import get_db
 import json
 

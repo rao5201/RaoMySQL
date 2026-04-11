@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from backend.database.init_db import get_db
 from backend.database.models import DbConnection
-from backend.routers.auth import get_current_user
+from .auth import get_current_user
 from backend.utils.crypto import decrypt_password
 from backend.services.mysql_client import MySQLClient
 
