@@ -662,7 +662,7 @@
           <a href="https://github.com/rao5201/RaoMySQL/fork" class="btn-primary" target="_blank">
             🚀 快速部署
           </a>
-          <a href="#get-started" class="btn-ghost">开始使用 →</a>
+          <a href="#get-started" class="btn-ghost">新用户注册 / 登录 →</a>
         </div>
         <div class="hero-stats reveal d4">
           <div class="stat">
@@ -1044,12 +1044,11 @@ LIMIT 10;
       </div>
       <div class="gs-card">
         <div class="gs-icon">🔑</div>
-        <h3>方式三：邀请注册</h3>
-        <p>已有邀请码？点击下方按钮，通过邀请链接注册账号。</p>
+        <h3>方式三：注册 / 登录</h3>
+        <p>已部署实例？新用户点击下方注册账号，已有账号直接登录。</p>
         <div class="gs-invite-box">
-          <div class="gs-invite-label">请输入邀请码</div>
-          <input type="text" id="invite-input" class="gs-input" placeholder="输入邀请码..." />
-          <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px 24px;font-size:14px;" onclick="goRegister()">注册账号 →</button>
+          <a href="/register" class="btn-primary" style="width:100%;padding:12px 24px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-bottom:10px;">📝 新用户注册</a>
+          <a href="/login" class="btn-ghost" style="width:100%;padding:12px 24px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:rgba(0,210,255,0.06);border:1px solid var(--border);color:var(--cyan);">🔐 已有账号登录</a>
         </div>
       </div>
     </div>
@@ -1090,31 +1089,12 @@ LIMIT 10;
   background: rgba(0,210,255,0.04); border: 1px solid var(--border);
   border-radius: 10px; padding: 16px;
 }
-.gs-invite-label { font-size: 12px; color: var(--gray); margin-bottom: 8px; text-align: left; }
-.gs-input {
-  width: 100%; padding: 10px 14px; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--border);
-  color: var(--white); font-family: var(--mono); font-size: 14px;
-  outline: none; transition: border-color 0.2s;
-  text-align: center;
-}
-.gs-input:focus { border-color: var(--cyan); }
-.gs-input::placeholder { color: var(--gray2); }
 @media (max-width: 900px) {
   .gs-options { grid-template-columns: 1fr; }
 }
 </style>
 
-<script>
-function goRegister() {
-  var code = document.getElementById('invite-input').value.trim();
-  if (code) {
-    window.location.href = 'https://github.com/rao5201/RaoMySQL';
-  } else {
-    alert('请输入邀请码');
-  }
-}
-</script>
+
 
 <!-- FOOTER -->
 <footer>
