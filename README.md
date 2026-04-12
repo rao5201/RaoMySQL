@@ -1,7 +1,8 @@
 # RaoMySQL
-https://raomysql.pages.dev/
+**🌐 官网：** https://raomysql.pages.dev/
 
-Private MySQL Database Management Platform
+开源 MySQL 数据库管理平台 · 多角色权限 · Docker 一键部署 · HTTPS
+
 # RaoMySQL Changelog
 
 ## v1.6.0 - 网站上线与注册系统 (2026-04-12)
