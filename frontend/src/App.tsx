@@ -76,7 +76,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark" width={220}>
-        <div style={{
+        <a href="./index.html" style={{
           height: 64,
           display: 'flex',
           alignItems: 'center',
@@ -84,10 +84,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           color: '#fff',
           fontSize: 16,
           fontWeight: 700,
-          letterSpacing: 1
-        }}>
-          {collapsed ? 'RM' : 'RaoMySQL'}
-        </div>
+          letterSpacing: 1,
+          textDecoration: 'none',
+          cursor: 'pointer'
+        }} title="返回网站首页">
+          {collapsed ? '🏠' : '🏠 RaoMySQL'}
+        </a>
         <Menu
           theme="dark"
           mode="inline"
@@ -103,9 +105,19 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           padding: '0 24px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0'
         }}>
+          <a href="./index.html" style={{
+            color: '#1890ff',
+            fontSize: 14,
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            ← 返回首页
+          </a>
           <Dropdown menu={{ ...userMenu, onClick: ({ key }) => handleMenuClick(key) }} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
               <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
