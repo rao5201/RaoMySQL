@@ -33,7 +33,11 @@ class Settings(BaseSettings):
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     SMTP_FROM: str = os.getenv("SMTP_FROM", "")
-    
+
+    # 注册模式配置
+    ALLOW_REGISTRATION: bool = os.getenv("ALLOW_REGISTRATION", "true").lower() == "true"
+    INVITE_REQUIRED: bool = os.getenv("INVITE_REQUIRED", "false").lower() == "true"
+
     class Config:
         env_file = ".env"
         extra = "allow"

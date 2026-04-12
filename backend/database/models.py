@@ -98,3 +98,18 @@ class Alert(Base):
     content = Column(Text, nullable=True)
     status = Column(String(16), default="unread")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Invitation(Base):
+    """邀请码表"""
+    __tablename__ = "invitations"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    code = Column(String(64), unique=True, nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    used_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    role = Column(String(32), default="developer")
+    max_uses = Column(Integer, default=1)
+    use_count = Column(Integer, default=0)
+    expires_at = Column(DateTime, nullable=True)
+    status = Column(String(16), default="active")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    used_at = Column(DateTime, nullable=True)
