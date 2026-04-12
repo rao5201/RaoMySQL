@@ -1,7 +1,10 @@
-raomysql.db
+﻿raomysql.db
 __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
 .env
 *.log
+
+dist/
+frontend/node_modules/
