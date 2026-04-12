@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Layout, Menu, theme, Badge, Dropdown, Avatar, Space } from 'antd'
 import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined, FileSearchOutlined, ExportOutlined, TeamOutlined } from '@ant-design/icons'
 import zhCN from 'antd/locale/zh_CN'
@@ -126,7 +126,7 @@ function App() {
   const [token] = useState(() => localStorage.getItem('raomysql_token') || '')
   return (
     <ConfigProvider theme={{ algorithm: theme.defaultAlgorithm, token: { colorPrimary: '#1890ff' } }} locale={zhCN}>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <Login />} />
           <Route path="/register" element={token ? <Navigate to="/dashboard" /> : <Register />} />
@@ -151,7 +151,7 @@ function App() {
             ) : <Navigate to="/login" />
           } />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </ConfigProvider>
   )
 }
