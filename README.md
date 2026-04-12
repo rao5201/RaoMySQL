@@ -4,6 +4,33 @@ https://raomysql.pages.dev/
 Private MySQL Database Management Platform
 # RaoMySQL Changelog
 
+## v1.6.0 - 网站上线与注册系统 (2026-04-12)
+
+### ✨ 新功能
+
+- **官方宣传网站上线** — 深海极客风格落地页（raomysql.pages.dev），粒子网络动画、功能展示、版本时间线
+- **用户邀请码注册系统** — `POST /api/auth/register` 支持邀请码验证，后台可管理邀请码
+- **Cloudflare Pages 自动化部署** — `build.sh` 构建脚本，自动合并落地页 + React SPA 到统一 `dist/` 目录
+- **落地页注册/登录直达链接** — 用户从落地页一键跳转注册或登录
+- **管理后台"返回首页"导航** — 侧边栏 Logo + 顶部 Header 均可返回网站首页
+
+### 🔧 技术变更
+
+- `index.html` — 官方宣传落地页（41KB）
+- `build.sh` — Cloudflare Pages 构建脚本
+- `frontend/vite.config.ts` — outDir 改为 `../dist`，base 改为 `./`（相对路径适配）
+- `frontend/src/App.tsx` — BrowserRouter → HashRouter（适配 Cloudflare Pages）
+- `.gitignore` — 新增 `dist/`、`frontend/node_modules/`
+
+### 🌐 部署
+
+- 网站地址：https://raomysql.pages.dev/
+- 构建命令：`bash build.sh`
+- 输出目录：`dist`
+- 结构：`index.html`（落地页）+ `app.html`（React 管理后台 SPA）
+
+---
+
 ## v1.5.0 - 后端修复与可用版本 (2026-04-12)
 
 ### 🐛 Bug 修复
@@ -97,7 +124,7 @@ Private MySQL Database Management Platform
 - 基础权限体系
 
 ## Version
-**v1.3.0** (2026-04-08)
+**v1.6.0** (2026-04-12)
 
 ## Features
 - Database connection management (CRUD)

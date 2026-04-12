@@ -1,4 +1,4 @@
-"""RaoMySQL v1.4.0 Backend Entry"""
+"""RaoMySQL v1.6.0 Backend Entry"""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,16 +26,16 @@ from backend.routers.export import router as export_router
 async def lifespan(app: FastAPI):
     await init_db()
     settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[RaoMySQL v1.4.0] http://localhost:{8000}")
-    print(f"[RaoMySQL v1.4.0] API Docs http://localhost:{8000}/docs")
+    print(f"[RaoMySQL v1.6.0] http://localhost:{8000}")
+    print(f"[RaoMySQL v1.6.0] API Docs http://localhost:{8000}/docs")
     yield
     await mysql_client.close_all()
     print("[RaoMySQL] shutdown")
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="RaoMySQL v1.4.0 - Private MySQL Management + Enterprise CMS + User Management",
-    version="1.4.0",
+    description="RaoMySQL v1.6.0 - Private MySQL Management + Enterprise CMS + User Management",
+    version="1.6.0",
     lifespan=lifespan
 )
 
@@ -60,11 +60,11 @@ app.include_router(export_router)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "app": settings.APP_NAME, "version": "1.4.0"}
+    return {"status": "ok", "app": settings.APP_NAME, "version": "1.6.0"}
 
 @app.get("/")
 async def root():
-    return {"message": "RaoMySQL API v1.4.0", "docs": "/docs", "version": "1.4.0"}
+    return {"message": "RaoMySQL API v1.6.0", "docs": "/docs", "version": "1.6.0"}
 
 if __name__ == "__main__":
     import uvicorn
