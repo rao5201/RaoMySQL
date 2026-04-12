@@ -40,33 +40,43 @@ class ConnOut(BaseModel):
     host: str
     port: int
     username: str
-    password_enc: str
     database_name: str
     tags: str
     ssl_enabled: bool
     max_connections: int
     created_at: str
-    
+    # ⚠️ 不返回 password_enc，避免密码泄露
+
     class Config:
         from_attributes = True
 
 @router.get("", response_model=List[ConnOut])
-async def list_connections(current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_connections(
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     q = select(DbConnection)
     if current.role != "admin":
         q = q.where(DbConnection.user_id == current.id)
     result = await db.execute(q)
     conns = result.scalars().all()
-    return [ConnOut(
-        id=c.id, name=c.name, host=c.host, port=c.port,
-        username=c.username or "", password_enc=c.password_enc or "",
-        database_name=c.database_name or "", tags=c.tags or "",
-        ssl_enabled=c.ssl_enabled, max_connections=c.max_connections,
-        created_at=str(c.created_at)
-    ) for c in conns]
+    return [
+        ConnOut(
+            id=c.id, name=c.name, host=c.host, port=c.port,
+            username=c.username or "", database_name=c.database_name or "",
+            tags=c.tags or "", ssl_enabled=c.ssl_enabled,
+            max_connections=c.max_connections,
+            created_at=str(c.created_at)
+        )
+        for c in conns
+    ]
 
 @router.post("")
-async def create_connection(data: ConnCreate, current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_connection(
+    data: ConnCreate,
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     conn = DbConnection(
         user_id=current.id,
         name=data.name, host=data.host, port=data.port,
@@ -82,25 +92,33 @@ async def create_connection(data: ConnCreate, current: User = Depends(get_curren
     return {"id": conn.id, "name": conn.name, "status": "created"}
 
 @router.put("/{conn_id}")
-async def update_connection(conn_id: int, data: ConnUpdate, current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def update_connection(
+    conn_id: int,
+    data: ConnUpdate,
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(DbConnection).where(DbConnection.id == conn_id))
     conn = result.scalar_one_or_none()
     if not conn:
         raise HTTPException(status_code=404, detail="连接不存在")
     if current.role != "admin" and conn.user_id != current.id:
         raise HTTPException(status_code=403, detail="无权限")
+
     for field, value in data.model_dump(exclude_unset=True).items():
         if field == "password" and value:
             setattr(conn, "password_enc", encrypt_password(value))
-        elif field == "password":
-            pass
-        else:
+        elif field != "password":
             setattr(conn, field, value)
     await db.commit()
     return {"status": "updated"}
 
 @router.delete("/{conn_id}")
-async def delete_connection(conn_id: int, current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_connection(
+    conn_id: int,
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(DbConnection).where(DbConnection.id == conn_id))
     conn = result.scalar_one_or_none()
     if not conn:
@@ -113,47 +131,54 @@ async def delete_connection(conn_id: int, current: User = Depends(get_current_us
     return {"status": "deleted"}
 
 @router.post("/{conn_id}/test")
-async def test_connection(conn_id: int, current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def test_connection(
+    conn_id: int,
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(DbConnection).where(DbConnection.id == conn_id))
     conn = result.scalar_one_or_none()
     if not conn:
         raise HTTPException(status_code=404, detail="连接不存在")
     if current.role != "admin" and conn.user_id != current.id:
         raise HTTPException(status_code=403, detail="无权限")
-    
+
     password = decrypt_password(conn.password_enc)
     try:
-        result = await mysql_client.execute(
+        test_result = await mysql_client.execute(
             conn.id, conn.host, conn.port, conn.username, password,
-            conn.database_name, sql="SELECT 1", max_connections=conn.max_connections,
+            conn.database_name, sql="SELECT 1",
+            max_connections=conn.max_connections,
             ssl_enabled=conn.ssl_enabled
         )
-        if result.get("status") == "success":
+        if test_result.get("status") == "success":
             return {"status": "ok", "message": "连接成功"}
-        else:
-            return {"status": "error", "message": result.get("error", "连接失败")}
+        return {"status": "error", "message": test_result.get("error", "连接失败")}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @router.get("/{conn_id}/schema")
-async def get_schema(conn_id: int, current: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_schema(
+    conn_id: int,
+    current: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(DbConnection).where(DbConnection.id == conn_id))
     conn = result.scalar_one_or_none()
     if not conn:
         raise HTTPException(status_code=404, detail="连接不存在")
     if current.role != "admin" and conn.user_id != current.id:
         raise HTTPException(status_code=403, detail="无权限")
-    
+
     password = decrypt_password(conn.password_enc)
     try:
-        # 获取所有表
         tables_res = await mysql_client.execute(
             conn.id, conn.host, conn.port, conn.username, password,
-            conn.database_name, sql=f"SHOW TABLES FROM `{conn.database_name}`",
+            conn.database_name,
+            sql=f"SHOW TABLES FROM `{conn.database_name}`",
             ssl_enabled=conn.ssl_enabled
         )
         tables = [list(r.values())[0] for r in tables_res.get("rows", [])]
-        
         schema = {}
         for table in tables:
             cols_res = await mysql_client.execute(
@@ -163,7 +188,6 @@ async def get_schema(conn_id: int, current: User = Depends(get_current_user), db
                 ssl_enabled=conn.ssl_enabled
             )
             schema[table] = cols_res.get("rows", [])
-        
         return {"connection_id": conn_id, "database": conn.database_name, "tables": schema}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
