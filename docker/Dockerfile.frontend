@@ -1,12 +1,30 @@
 FROM node:20-alpine AS build
+
 WORKDIR /app
-COPY frontend/package*.json .
+
+# Install frontend dependencies
+COPY frontend/package*.json ./
 RUN npm install
+
+# Copy frontend source and build
 COPY frontend/ .
 RUN npm run build
 
+# Rename React's index.html to app.html
+RUN mv dist/index.html dist/app.html
+
+# Final: Nginx + landing page
 FROM nginx:alpine
+
+# Copy React build (now with app.html + assets/)
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy landing page as main index.html
+COPY index.html /usr/share/nginx/html/index.html
+
+# Copy Nginx config
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
