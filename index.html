@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RaoMySQL — 私有 MySQL 数据库管理平台</title>
+  <meta name="description" content="RaoMySQL 是一款功能完整的私有 MySQL 数据库管理平台，支持连接管理、SQL 执行、备份恢复、监控告警、AI 助手与多角色权限管理。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #04080f;
+      --bg2: #070d1a;
+      --bg3: #0b1628;
+      --surface: #0f1e38;
+      --surface2: #142a4a;
+      --border: rgba(0, 210, 255, 0.12);
+      --border2: rgba(0, 210, 255, 0.25);
+      --cyan: #00d2ff;
+      --cyan2: #00aaff;
+      --teal: #00ffd0;
+      --purple: #8b5cf6;
+      --white: #e8f4ff;
+      --gray: #6b8aaa;
+      --gray2: #3a5570;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+      --display: 'Space Grotesk', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--white);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: rgba(0, 210, 255, 0.25); color: var(--white); }
+
+    /* ─── CANVAS / BG ─── */
+    #bg-canvas {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(0, 210, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 170, 255, 0.04) 0%, transparent 50%),
+        linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+    }
+
+    /* ─── LAYOUT ─── */
+    .content { position: relative; z-index: 1; }
+
+    .container {
+      max-width: 1140px; margin: 0 auto; padding: 0 24px;
+    }
+
+    section { padding: 100px 0; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0 24px;
+      background: rgba(4, 8, 15, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      height: 64px;
+      display: flex; align-items: center;
+    }
+    nav .inner {
+      max-width: 1140px; margin: 0 auto; width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: var(--mono); font-size: 18px; font-weight: 500;
+      color: var(--white); text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo .dot { color: var(--cyan); }
+    .nav-links {
+      display: flex; align-items: center; gap: 8px; list-style: none;
+    }
+    .nav-links a {
+      color: var(--gray); text-decoration: none;
+      font-size: 14px; padding: 6px 14px; border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); background: var(--surface); }
+    .nav-links .btn-nav {
+      color: var(--cyan) !important;
+      border: 1px solid var(--border2);
+      background: rgba(0, 210, 255, 0.08);
+      padding: 6px 16px;
+    }
+    .nav-links .btn-nav:hover { background: rgba(0, 210, 255, 0.15); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding-top: 64px;
+      position: relative;
+    }
+    .hero-inner {
+      padding: 80px 0;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0, 210, 255, 0.08);
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 12px; color: var(--cyan);
+      font-family: var(--mono);
+      margin-bottom: 28px;
+    }
+    .hero-badge .pulse {
+      width: 6px; height: 6px; background: var(--teal);
+      border-radius: 50%; animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(40px, 5.5vw, 72px);
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+    .hero h1 .accent { color: var(--cyan); }
+    .hero h1 .accent2 { color: var(--teal); }
+    .hero-desc {
+      font-size: 17px; line-height: 1.7; color: var(--gray);
+      margin-bottom: 40px; max-width: 480px;
+    }
+    .hero-ctas {
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+      color: #020810; font-weight: 600; font-size: 15px;
+      padding: 12px 28px; border-radius: 12px; text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 30px rgba(0, 210, 255, 0.25);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 45px rgba(0, 210, 255, 0.4); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border2); color: var(--white);
+      font-weight: 500; font-size: 15px;
+      padding: 12px 28px; border-radius: 12px; text-decoration: none;
+      background: var(--surface);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-ghost:hover { background: var(--surface2); border-color: var(--cyan); }
+    .hero-stats {
+      display: flex; gap: 36px; margin-top: 48px;
+    }
+    .stat { }
+    .stat-num {
+      font-family: var(--display); font-size: 26px; font-weight: 700;
+      color: var(--white);
+    }
+    .stat-label { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+    /* Hero Visual */
+    .hero-visual { position: relative; }
+    .terminal-window {
+      background: rgba(7, 13, 26, 0.9);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0, 210, 255, 0.08),
+        0 40px 80px rgba(0, 0, 0, 0.6),
+        0 0 60px rgba(0, 210, 255, 0.08);
+    }
+    .terminal-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-dot {
+      width: 11px; height: 11px; border-radius: 50%;
+    }
+    .terminal-dot.r { background: #ff5f57; }
+    .terminal-dot.y { background: #febc2e; }
+    .terminal-dot.g { background: #28c840; }
+    .terminal-title {
+      flex: 1; text-align: center;
+      font-family: var(--mono); font-size: 12px; color: var(--gray);
+    }
+    .terminal-body { padding: 20px 24px; }
+    .term-line {
+      font-family: var(--mono); font-size: 13px;
+      line-height: 1.8; display: flex; gap: 8px;
+    }
+    .term-prompt { color: var(--teal); }
+    .term-cmd { color: var(--white); }
+    .term-out { color: var(--gray); }
+    .term-key { color: var(--cyan); }
+    .term-success { color: var(--teal); }
+    .term-warn { color: #febc2e; }
+    .term-highlight {
+      background: rgba(0, 210, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 6px; padding: 2px 8px;
+      color: var(--cyan);
+    }
+    .terminal-glow {
+      position: absolute; inset: -2px;
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.1), rgba(0, 170, 255, 0.05));
+      border-radius: 18px; z-index: -1;
+      filter: blur(30px);
+    }
+
+    /* Floating badges */
+    .float-badge {
+      position: absolute;
+      background: rgba(7, 13, 26, 0.9);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+      backdrop-filter: blur(10px);
+      animation: float 4s ease-in-out infinite;
+    }
+    .float-badge.badge1 {
+      top: -20px; right: -30px;
+      animation-delay: 0s;
+    }
+    .float-badge.badge2 {
+      bottom: 40px; left: -30px;
+      animation-delay: 1.5s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .badge-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+
+    /* ─── DIVIDER ─── */
+    .section-label {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-label::before {
+      content: ''; width: 28px; height: 2px;
+      background: var(--cyan);
+      border-radius: 2px;
+    }
+    .section-label span {
+      font-family: var(--mono); font-size: 12px;
+      color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(30px, 4vw, 48px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 16px; color: var(--gray);
+      max-width: 540px; line-height: 1.7;
+    }
+
+    /* ─── FEATURES ─── */
+    #features { padding: 100px 0; }
+    .features-header {
+      text-align: center; margin-bottom: 72px;
+    }
+    .features-header .section-label { justify-content: center; }
+    .features-header .section-label::before { display: none; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.05), transparent);
+      opacity: 0; transition: opacity 0.25s;
+    }
+    .feature-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), 0 0 30px rgba(0, 210, 255, 0.06);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .feature-icon.blue { background: rgba(0, 170, 255, 0.12); }
+    .feature-icon.teal { background: rgba(0, 255, 208, 0.1); }
+    .feature-icon.purple { background: rgba(139, 92, 246, 0.12); }
+    .feature-icon.green { background: rgba(0, 210, 255, 0.1); }
+    .feature-icon.amber { background: rgba(254, 188, 46, 0.1); }
+    .feature-card h3 {
+      font-family: var(--display); font-size: 18px;
+      font-weight: 600; margin-bottom: 10px;
+    }
+    .feature-card p { font-size: 14px; color: var(--gray); line-height: 1.65; }
+    .feature-tags {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 16px;
+    }
+    .feature-tag {
+      font-family: var(--mono); font-size: 11px;
+      padding: 3px 10px; border-radius: 6px;
+      background: rgba(0, 210, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--cyan);
+    }
+
+    /* ─── ARCHITECTURE ─── */
+    #architecture { }
+    .arch-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 60px; align-items: center;
+      margin-top: 60px;
+    }
+    .arch-visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px;
+      position: relative;
+    }
+    .arch-layer {
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 14px;
+      background: var(--bg2);
+      transition: border-color 0.2s;
+    }
+    .arch-layer:hover { border-color: var(--border2); }
+    .arch-layer-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .arch-layer-label { font-size: 13px; font-weight: 500; }
+    .arch-layer-desc { font-size: 12px; color: var(--gray); }
+    .arch-arrow {
+      text-align: center; font-size: 16px;
+      color: var(--gray2); padding: 2px 0;
+    }
+    .arch-desc-list { list-style: none; margin-top: 0; }
+    .arch-desc-list li {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .arch-desc-list li:last-child { border-bottom: none; }
+    .arch-check {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(0, 255, 208, 0.12);
+      border: 1px solid rgba(0, 255, 208, 0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--teal); flex-shrink: 0; margin-top: 1px;
+    }
+    .arch-desc-list li strong { font-size: 15px; display: block; margin-bottom: 3px; }
+    .arch-desc-list li span { font-size: 13px; color: var(--gray); }
+
+    /* ─── AI SECTION ─── */
+    #ai-section {
+      position: relative; overflow: hidden;
+    }
+    #ai-section::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .ai-layout {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 60px; align-items: center;
+    }
+    .ai-demo {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .ai-demo-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(0,0,0,0.2);
+    }
+    .ai-demo-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .ai-demo-header span {
+      font-family: var(--mono); font-size: 12px; color: var(--gray);
+      margin-left: auto;
+    }
+    .ai-demo-body { padding: 24px; }
+    .ai-msg {
+      margin-bottom: 16px;
+    }
+    .ai-msg-label {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--gray); margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ai-msg-label .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); }
+    .ai-msg-label .human-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
+    .ai-bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px; border-top-left-radius: 4px;
+      padding: 12px 16px;
+      font-size: 13px; line-height: 1.6;
+      color: var(--gray);
+    }
+    .ai-msg.human .ai-bubble {
+      background: rgba(0, 210, 255, 0.06);
+      border-color: rgba(0, 210, 255, 0.15);
+      border-top-left-radius: 12px; border-top-right-radius: 4px;
+      color: var(--white);
+    }
+    .ai-cmd {
+      font-family: var(--mono); font-size: 13px;
+      color: var(--teal); background: rgba(0, 255, 208, 0.06);
+      border: 1px solid rgba(0, 255, 208, 0.15);
+      border-radius: 8px; padding: 10px 14px;
+    }
+
+    /* ─── SECURITY ─── */
+    #security { }
+    .security-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-top: 60px;
+    }
+    .sec-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .sec-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+    .sec-icon {
+      font-size: 32px; margin-bottom: 14px;
+    }
+    .sec-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .sec-card p { font-size: 12px; color: var(--gray); line-height: 1.6; }
+
+    /* ─── RELEASES ─── */
+    #releases { }
+    .release-timeline {
+      margin-top: 60px; position: relative;
+      padding-left: 32px;
+    }
+    .release-timeline::before {
+      content: '';
+      position: absolute; left: 6px; top: 0; bottom: 0;
+      width: 1px; background: linear-gradient(to bottom, var(--cyan), transparent);
+    }
+    .release-item {
+      position: relative; padding-bottom: 40px;
+    }
+    .release-item::before {
+      content: '';
+      position: absolute; left: -30px; top: 4px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--cyan);
+    }
+    .release-item.current::before {
+      background: var(--cyan); box-shadow: 0 0 12px var(--cyan);
+    }
+    .release-version {
+      font-family: var(--mono); font-size: 14px;
+      color: var(--cyan); margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .release-version .ver-tag {
+      font-size: 10px; padding: 2px 8px; border-radius: 4px;
+      background: rgba(0, 210, 255, 0.1);
+      border: 1px solid var(--border2);
+      color: var(--cyan);
+    }
+    .release-date { font-size: 12px; color: var(--gray); margin-bottom: 10px; }
+    .release-changelog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px;
+      font-size: 13px; line-height: 1.7;
+      color: var(--gray);
+    }
+    .release-changelog strong { color: var(--white); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 60px 0 40px;
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px; margin-bottom: 48px;
+    }
+    .footer-brand .footer-logo {
+      font-family: var(--mono); font-size: 20px;
+      font-weight: 500; color: var(--white);
+      margin-bottom: 12px; display: block;
+    }
+    .footer-brand p { font-size: 13px; color: var(--gray); line-height: 1.7; }
+    .footer-col h4 {
+      font-size: 13px; font-weight: 600; margin-bottom: 16px;
+      color: var(--white);
+    }
+    .footer-col ul { list-style: none; }
+    .footer-col ul li { margin-bottom: 10px; }
+    .footer-col ul li a {
+      color: var(--gray); text-decoration: none; font-size: 13px;
+      transition: color 0.2s;
+    }
+    .footer-col ul li a:hover { color: var(--cyan); }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-bottom span { font-size: 12px; color: var(--gray2); }
+    .footer-bottom .version-badge {
+      font-family: var(--mono); font-size: 11px;
+      padding: 3px 10px; border-radius: 6px;
+      background: rgba(0, 210, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--cyan);
+    }
+
+    /* ─── ANIMATIONS ─── */
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal.d1 { transition-delay: 0.1s; }
+    .reveal.d2 { transition-delay: 0.2s; }
+    .reveal.d3 { transition-delay: 0.3s; }
+    .reveal.d4 { transition-delay: 0.4s; }
+    .reveal.d5 { transition-delay: 0.5s; }
+    .reveal.d6 { transition-delay: 0.6s; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .security-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+      .arch-grid { grid-template-columns: 1fr; }
+      .ai-layout { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .security-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links li:not(:last-child) { display: none; }
+      .hero-stats { gap: 24px; }
+      .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; gap: 12px; }
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray2); }
+
+    /* ─── CURSOR ─── */
+    a, button, .feature-card, .feature-tag { cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<!-- BG Canvas -->
+<canvas id="bg-canvas"></canvas>
+<div class="bg-grid"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="inner">
+    <a href="#" class="nav-logo">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path d="M11 2L3 6V16L11 20L19 16V6L11 2Z" fill="none" stroke="#00d2ff" stroke-width="1.5"/>
+        <circle cx="11" cy="11" r="3" fill="#00d2ff" opacity="0.6"/>
+        <path d="M11 8V11L13 13" stroke="#00d2ff" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Rao<span class="dot">My</span>SQL
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">功能</a></li>
+      <li><a href="#architecture">架构</a></li>
+      <li><a href="#ai-section">AI 助手</a></li>
+      <li><a href="#security">安全</a></li>
+      <li><a href="#releases">更新</a></li>
+      <li><a href="https://github.com/rao5201/RaoMySQL" class="btn-nav" target="_blank">GitHub ★</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="content">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-badge reveal">
+          <span class="pulse"></span>
+          v1.5.0 现已发布
+        </div>
+        <h1 class="reveal d1">
+          掌控你的<br/>
+          <span class="accent">MySQL</span> 数据库<br/>
+          <span class="accent2">从未如此简单</span>
+        </h1>
+        <p class="hero-desc reveal d2">
+          RaoMySQL 是一款功能完整的私有 MySQL 数据库管理平台，无需将数据托管给第三方。支持连接管理、SQL 执行、备份恢复、监控告警、AI 智能分析，守护数据主权。
+        </p>
+        <div class="hero-ctas reveal d3">
+          <a href="https://github.com/rao5201/RaoMySQL" class="btn-primary" target="_blank">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            在 GitHub 查看
+          </a>
+          <a href="#features" class="btn-ghost">探索功能 →</a>
+        </div>
+        <div class="hero-stats reveal d4">
+          <div class="stat">
+            <div class="stat-num">v1.5.0</div>
+            <div class="stat-label">最新版本</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">10+</div>
+            <div class="stat-label">核心功能</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">3 系统</div>
+            <div class="stat-label">统一用户</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal Visual -->
+      <div class="hero-visual reveal d2">
+        <div class="terminal-glow"></div>
+        <div class="terminal-window">
+          <div class="terminal-bar">
+            <span class="terminal-dot r"></span>
+            <span class="terminal-dot y"></span>
+            <span class="terminal-dot g"></span>
+            <span class="terminal-title">rao@mysql-manager:~</span>
+          </div>
+          <div class="terminal-body">
+            <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">uvicorn backend.main:app</span></div>
+            <div class="term-line term-out">INFO: Application startup complete.</div>
+            <div class="term-line term-out">INFO: Uvicorn running on http://0.0.0.0:8000</div>
+            <br/>
+            <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">curl -X POST /api/auth/register \</span></div>
+            <div class="term-line"><span class="term-cmd">  -d '{"username":"alice","password":"***","role":"viewer"}'</span></div>
+            <div class="term-line term-success">{"id":1,"username":"alice","role":"viewer","status":"active"}</div>
+            <br/>
+            <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">curl -X POST /api/auth/login \</span></div>
+            <div class="term-line term-success">{"access_token":"eyJhbGc...", "token_type":"bearer"}</div>
+            <br/>
+            <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">POST /api/query — 执行 SQL</span></div>
+            <div class="term-line term-success">查询完成 · 耗时 <span class="term-highlight">2.3ms</span> · 返回 42 行</div>
+          </div>
+        </div>
+        <div class="float-badge badge1">
+          <div class="badge-icon" style="background:rgba(0,210,255,0.12);">⚡</div>
+          <div>
+            <div style="font-weight:600;font-size:13px;">FastAPI</div>
+            <div style="color:var(--gray);font-size:11px;">异步高性能</div>
+          </div>
+        </div>
+        <div class="float-badge badge2">
+          <div class="badge-icon" style="background:rgba(0,255,208,0.1);">🔒</div>
+          <div>
+            <div style="font-weight:600;font-size:13px;">JWT Auth</div>
+            <div style="color:var(--gray);font-size:11px;">多角色权限</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="features-header">
+      <div class="section-label reveal"><span>核心功能</span></div>
+      <h2 class="section-title reveal d1">一个平台，全部搞定</h2>
+      <p class="section-sub reveal d2">从连接到监控，从执行到备份，从权限管理到 AI 辅助，RaoMySQL 提供一站式数据库管理体验。</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal d1">
+        <div class="feature-icon blue">🔗</div>
+        <h3>多连接管理</h3>
+        <p>统一管理多个 MySQL 连接，支持 TLS/SSL 加密连接、标签分类、连接池配置，单点管理所有数据库资产。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">TLS</span><span class="feature-tag">连接池</span><span class="feature-tag">多环境</span>
+        </div>
+      </div>
+      <div class="feature-card reveal d2">
+        <div class="feature-icon teal">⚡</div>
+        <h3>SQL 执行器</h3>
+        <p>在线 SQL 编辑器，支持语法高亮、自动补全、查询历史、代码片段库，查询结果支持导出 CSV/JSON，多人协作安全无忧。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">NL2SQL</span><span class="feature-tag">语法高亮</span><span class="feature-tag">结果导出</span>
+        </div>
+      </div>
+      <div class="feature-card reveal d3">
+        <div class="feature-icon purple">💾</div>
+        <h3>备份与恢复</h3>
+        <p>支持定时自动备份与手动备份，备份文件加密存储，支持一键恢复到指定时间点。备份历史完整可追溯。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">定时任务</span><span class="feature-tag">加密存储</span><span class="feature-tag">时间点恢复</span>
+        </div>
+      </div>
+      <div class="feature-card reveal d4">
+        <div class="feature-icon green">📊</div>
+        <h3>实时监控</h3>
+        <p>连接状态监控、慢查询分析、容量趋势图表、性能指标告警。告警规则灵活配置，微信/邮件通知，及时发现隐患。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">慢查询</span><span class="feature-tag">容量趋势</span><span class="feature-tag">告警规则</span>
+        </div>
+      </div>
+      <div class="feature-card reveal d5">
+        <div class="feature-icon amber">🤖</div>
+        <h3>AI 智能助手</h3>
+        <p>自然语言转 SQL（NL2SQL），AI 慢查询分析，SQL 代码审查，告警内容智能解读。接入 OpenAI / 本地模型，数据不出内网。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">NL2SQL</span><span class="feature-tag">SQL Review</span><span class="feature-tag">慢查询分析</span>
+        </div>
+      </div>
+      <div class="feature-card reveal d6">
+        <div class="feature-icon blue">🔑</div>
+        <h3>多角色权限</h3>
+        <p>管理员、运维、开发者、只读等多种角色，细粒度权限控制，敏感操作审计日志，所有操作可追溯、可审计。</p>
+        <div class="feature-tags">
+          <span class="feature-tag">JWT</span><span class="feature-tag">RBAC</span><span class="feature-tag">审计日志</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label reveal"><span>技术架构</span></div>
+    <h2 class="section-title reveal d1">简洁优雅，技术选型</h2>
+    <p class="section-sub reveal d2">前后端分离架构，现代技术栈，生产级性能，极简部署。</p>
+    <div class="arch-grid">
+      <div class="arch-desc-list reveal d1">
+        <li>
+          <div class="arch-check">✓</div>
+          <div>
+            <strong>FastAPI 异步后端</strong>
+            <span>基于 Python FastAPI + SQLAlchemy 异步引擎，支持高并发请求，性能优异</span>
+          </div>
+        </li>
+        <li>
+          <div class="arch-check">✓</div>
+          <div>
+            <strong>React 18 前端</strong>
+            <span>React 18 + TypeScript + Vite + Ant Design，开发体验流畅，界面专业美观</span>
+          </div>
+        </li>
+        <li>
+          <div class="arch-check">✓</div>
+          <div>
+            <strong>SQLite 元数据库</strong>
+            <span>元数据使用 SQLite，无需额外部署；目标 MySQL 完全由你掌控，数据主权零妥协</span>
+          </div>
+        </li>
+        <li>
+          <div class="arch-check">✓</div>
+          <div>
+            <strong>Docker 一键部署</strong>
+            <span>Docker Compose 一键启动，Nginx 反向代理，生产环境 Ready</span>
+          </div>
+        </li>
+        <li>
+          <div class="arch-check">✓</div>
+          <div>
+            <strong>统一用户系统</strong>
+            <span>连接 RaoCMS、RaoFileManager 统一认证，单点登录，跨系统数据关联</span>
+          </div>
+        </li>
+      </div>
+      <div class="arch-visual reveal d2">
+        <div class="arch-layer" style="background:linear-gradient(135deg,rgba(0,210,255,0.06),rgba(0,170,255,0.03));border-color:rgba(0,210,255,0.2);">
+          <div class="arch-layer-icon" style="background:rgba(0,210,255,0.12);">🎨</div>
+          <div>
+            <div class="arch-layer-label" style="color:var(--cyan);">Frontend — React 18</div>
+            <div class="arch-layer-desc">Ant Design · TypeScript · Vite</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓ REST API · JWT Auth</div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon" style="background:rgba(0,255,208,0.08);">⚙️</div>
+          <div>
+            <div class="arch-layer-label" style="color:var(--teal);">Backend — FastAPI</div>
+            <div class="arch-layer-desc">SQLAlchemy · async/await · Pydantic</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon" style="background:rgba(139,92,246,0.08);">🗄️</div>
+          <div>
+            <div class="arch-layer-label" style="color:var(--purple);">Meta DB — SQLite</div>
+            <div class="arch-layer-desc">用户/连接/审计数据</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon" style="background:rgba(0,210,255,0.06);">🐬</div>
+          <div>
+            <div class="arch-layer-label" style="color:var(--cyan);">MySQL — 你的数据</div>
+            <div class="arch-layer-desc">完全私有，数据不出内网</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI SECTION -->
+<section id="ai-section">
+  <div class="container">
+    <div class="ai-layout">
+      <div>
+        <div class="section-label reveal"><span>AI 集成</span></div>
+        <h2 class="section-title reveal d1">自然语言操控数据库</h2>
+        <p class="section-sub reveal d2">NL2SQL 将你的自然语言问题直接转换为 SQL 语句，无需记忆复杂语法。配合 AI 慢查询分析和 SQL Review，大幅提升 DBA 和开发者效率。</p>
+        <div class="ai-features reveal d3" style="margin-top:28px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🗣️</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;">NL2SQL — 自然语言查询</div>
+              <div style="font-size:12px;color:var(--gray);">"查找过去一周订单数超过100的用户"</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(254,188,46,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;">🐢</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;">慢查询智能分析</div>
+              <div style="font-size:12px;color:var(--gray);">AI 自动识别性能瓶颈并给出优化建议</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 0;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(0,210,255,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;">🔍</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;">SQL 代码审查</div>
+              <div style="font-size:12px;color:var(--gray);">执行前 AI 自动审查，提前发现潜在问题</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal d2">
+        <div class="ai-demo">
+          <div class="ai-demo-header">
+            <div class="dot" style="background:#ff5f57;"></div>
+            <div class="dot" style="background:#febc2e;"></div>
+            <div class="dot" style="background:#28c840;"></div>
+            <span>AI 助手 · NL2SQL</span>
+          </div>
+          <div class="ai-demo-body">
+            <div class="ai-msg">
+              <div class="ai-msg-label"><span class="human-dot"></span> 用户</div>
+              <div class="ai-bubble">帮我查询订单金额最高的前10位客户，显示他们的邮箱和总消费额</div>
+            </div>
+            <div class="ai-msg human">
+              <div class="ai-msg-label"><span class="ai-dot"></span> AI</div>
+              <div class="ai-bubble">
+                已转换为 SQL：
+                <div class="ai-cmd" style="margin-top:8px;">
+SELECT c.email, SUM(o.amount) AS total_spent<br/>
+FROM customers c<br/>
+JOIN orders o ON c.id = o.customer_id<br/>
+GROUP BY c.id, c.email<br/>
+ORDER BY total_spent DESC<br/>
+LIMIT 10;
+                </div>
+              </div>
+            </div>
+            <div class="ai-msg">
+              <div class="ai-msg-label"><span class="ai-dot"></span> AI</div>
+              <div class="ai-bubble">✅ 查询完成 · 耗时 <strong style="color:var(--teal);">8.2ms</strong> · 返回 10 行</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="container">
+    <div class="section-label reveal"><span>安全与合规</span></div>
+    <h2 class="section-title reveal d1">私有部署，数据主权</h2>
+    <p class="section-sub reveal d2">数据库完全运行在你的服务器上，数据不经过任何第三方，零数据泄露风险。</p>
+    <div class="security-grid">
+      <div class="sec-card reveal d1">
+        <div class="sec-icon">🔒</div>
+        <h4>连接加密</h4>
+        <p>支持 TLS/SSL 加密传输，连接密码使用 bcrypt/SHA256 双重哈希保护</p>
+      </div>
+      <div class="sec-card reveal d2">
+        <div class="sec-icon">👥</div>
+        <h4>RBAC 权限</h4>
+        <p>多角色细粒度权限控制，管理员、运维、开发者、只读，职责分明</p>
+      </div>
+      <div class="sec-card reveal d3">
+        <div class="sec-icon">📋</div>
+        <h4>操作审计</h4>
+        <p>所有敏感操作完整记录，用户、行为、时间、IP 全链路可追溯</p>
+      </div>
+      <div class="sec-card reveal d4">
+        <div class="sec-icon">🛡️</div>
+        <h4>内网隔离</h4>
+        <p>部署在内网环境，无公网暴露面，符合企业安全合规要求</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RELEASES -->
+<section id="releases">
+  <div class="container">
+    <div class="section-label reveal"><span>版本更新</span></div>
+    <h2 class="section-title reveal d1">持续迭代</h2>
+    <div class="release-timeline">
+      <div class="release-item current reveal d1">
+        <div class="release-version">v1.5.0 <span class="ver-tag">最新</span></div>
+        <div class="release-date">2026-04-12</div>
+        <div class="release-changelog">
+          <strong>后端修复与可用版本</strong><br/>
+          Python 导入路径统一、uvicorn 模块启动修复、bcrypt/sha256 备用密码方案、路由前缀重复问题修复。所有 API 端点验证通过：注册、登录、用户管理均正常运行。
+        </div>
+      </div>
+      <div class="release-item reveal d2">
+        <div class="release-version">v1.4.0</div>
+        <div class="release-date">2026-04-09</div>
+        <div class="release-changelog">
+          <strong>用户管理版本</strong><br/>
+          用户注册页面、用户管理面板（分页/筛选/增删改）、管理员密码重置、启用/禁用账号、用户统计概览。
+        </div>
+      </div>
+      <div class="release-item reveal d3">
+        <div class="release-version">v1.3.0</div>
+        <div class="release-date">2026-04-08</div>
+        <div class="release-changelog">
+          <strong>统一用户体系版本</strong><br/>
+          统一认证服务、跨系统单点登录、API Gateway、RaoMySQL/RaoCMS/RaoFileManager 统一用户模型。
+        </div>
+      </div>
+      <div class="release-item reveal d4">
+        <div class="release-version">v1.2.0</div>
+        <div class="release-date">2026-04-08</div>
+        <div class="release-changelog">
+          <strong>AI 与监控版本</strong><br/>
+          AI 助手 / AI 设置页面、审计日志看板、数据导出（CSV/JSON）、Docker + Nginx 部署配置。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-logo">RaoMySQL</span>
+        <p>私有 MySQL 数据库管理平台。功能完整、部署简单、数据主权零妥协。支持连接管理、SQL 执行、备份恢复、监控告警、AI 助手与多角色权限管理。</p>
+      </div>
+      <div class="footer-col">
+        <h4>功能</h4>
+        <ul>
+          <li><a href="#features">连接管理</a></li>
+          <li><a href="#features">SQL 执行</a></li>
+          <li><a href="#features">备份恢复</a></li>
+          <li><a href="#features">监控告警</a></li>
+          <li><a href="#ai-section">AI 助手</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>快速链接</h4>
+        <ul>
+          <li><a href="https://github.com/rao5201/RaoMySQL" target="_blank">GitHub</a></li>
+          <li><a href="#releases">更新日志</a></li>
+          <li><a href="https://github.com/rao5201/RaoMySQL/issues" target="_blank">反馈问题</a></li>
+          <li><a href="https://github.com/rao5201/RaoMySQL/issues" target="_blank">功能请求</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>相关项目</h4>
+        <ul>
+          <li><a href="#">RaoCMS</a></li>
+          <li><a href="#">RaoFileManager</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 RaoMySQL · 私有化部署 · 数据主权</span>
+      <span class="version-badge">v1.5.0</span>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /content -->
+
+<script>
+  // ── Particle Canvas ──
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function createParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.5 + 0.1,
+      cyan: Math.random() > 0.5,
+    };
+  }
+
+  const count = Math.min(Math.floor(W * H / 12000), 80);
+  for (let i = 0; i < count; i++) particles.push(createParticle());
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 160) {
+          ctx.beginPath();
+          ctx.strokeStyle = particles[i].cyan
+            ? `rgba(0,210,255,${0.08 * (1 - dist / 160)})`
+            : `rgba(0,170,255,${0.05 * (1 - dist / 160)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    // nodes
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.cyan
+        ? `rgba(0,210,255,${p.alpha})`
+        : `rgba(0,170,255,${p.alpha * 0.6})`;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  // ── Scroll Reveal ──
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ── Smooth nav ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
