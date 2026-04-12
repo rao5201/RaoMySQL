@@ -1,5 +1,29 @@
 # RaoMySQL Changelog
 
+## v1.5.0 - 后端修复与可用版本 (2026-04-12)
+
+### 🐛 Bug 修复
+
+- **Python 导入路径问题** — 统一改为 `backend.xxx` 包格式，修复 `ModuleNotFoundError`
+- **uvicorn 模块启动问题** — `main.py` 添加 `sys.path.insert(0, parent)` 解决路径解析
+- **路由前缀重复** — 移除 `include_router` 中冗余的 `prefix="/api"`，解决 `/api/api/auth` 路径问题
+- **配置属性缺失** — `settings.PORT` 改为硬编码 `8000`
+- **bcrypt 兼容性问题** — `bcrypt 5.0.0` + `passlib` 冲突导致 500 错误，新增 `sha256_crypt` 备用方案自动降级
+
+### ✅ 验证通过
+
+- `POST /api/auth/register` → 200 OK（用户注册）
+- `POST /api/auth/login` → 200 OK + JWT Token（用户登录）
+- `GET /api/auth/me` → 返回当前用户信息
+
+### 🔧 技术变更
+
+- 19 个后端文件导入路径统一修复
+- 新增 `.gitignore`（忽略 `__pycache__`、`*.pyc`、`raomysql.db`）
+- 新增 `sha256_crypt` 备用密码哈希方案（`auth.py`）
+
+---
+
 ## v1.4.0 - 用户管理版本 (2026-04-09)
 
 ### 新功能
