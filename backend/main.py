@@ -26,6 +26,7 @@ from backend.routers.tasks import router as tasks_router
 from backend.routers.ai import router as ai_router
 from backend.routers.audit import router as audit_router
 from backend.routers.export import router as export_router
+from backend.routers.alerts import router as alerts_router
 
 # ── 速率限制（防暴力破解：每 IP 每分钟 10 次） ──
 class RateLimitMiddleware:
@@ -94,14 +95,15 @@ async def rate_limit_middleware(request: Request, call_next):
 # ── 注册路由 ──
 app.include_router(auth_router)
 app.include_router(users_router)
-app.include_router(connections_router, prefix="/api")
-app.include_router(sql_router, prefix="/api")
+app.include_router(connections_router)
+app.include_router(sql_router)
 app.include_router(backups_router)
 app.include_router(monitor_router)
 app.include_router(tasks_router)
 app.include_router(ai_router)
 app.include_router(audit_router)
 app.include_router(export_router)
+app.include_router(alerts_router)
 
 @app.get("/health")
 async def health():

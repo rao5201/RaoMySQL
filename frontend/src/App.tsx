@@ -1,7 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Layout, Menu, theme, Badge, Dropdown, Avatar, Space } from 'antd'
-import { DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined, SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined, FileSearchOutlined, ExportOutlined, TeamOutlined } from '@ant-design/icons'
+import {
+  DatabaseOutlined, TableOutlined, RobotOutlined, AlertOutlined,
+  SettingOutlined, UserOutlined, LogoutOutlined, DashboardOutlined,
+  FileSearchOutlined, ExportOutlined, TeamOutlined, CloudUploadOutlined,
+  BellOutlined
+} from '@ant-design/icons'
 import zhCN from 'antd/locale/zh_CN'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -17,30 +22,24 @@ import DataExport from './pages/DataExport'
 import AIServices from './pages/AIServices'
 import AISettings from './pages/AISettings'
 import Users from './pages/Users'
+import AlertsCenter from './pages/AlertsCenter'
+import request from './api'
 
 const { Header, Sider, Content } = Layout
 
-const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/connections', icon: <DatabaseOutlined />, label: 'Connections' },
-  { key: '/sql', icon: <TableOutlined />, label: 'SQL Editor' },
-  { key: '/backups', icon: <AlertOutlined />, label: 'Backups' },
-  { key: '/tasks', icon: <SettingOutlined />, label: 'Tasks' },
-  { type: 'divider' as const },
-  { key: '/ai', icon: <RobotOutlined />, label: 'AI Services' },
-  { key: '/ai-settings', icon: <RobotOutlined />, label: 'AI Settings' },
-  { type: 'divider' as const },
-  { key: '/users', icon: <TeamOutlined />, label: 'User Management' },
-  { key: '/export', icon: <ExportOutlined />, label: 'Data Export' },
-  { key: '/audit', icon: <FileSearchOutlined />, label: 'Audit Log' },
-  { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
-]
-
 function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [unreadAlerts, setUnreadAlerts] = useState(0)
+
+  useEffect(() => {
+    // 加载未读告警数
+    request.get('/alerts/stats/summary').then(r => {
+      setUnreadAlerts(r.data?.unread || 0)
+    }).catch(() => {})
+  }, [])
 
   const handleMenuClick = (key: string) => {
-    if (key === '/login') {
+    if (key === '/login' || key === '/logout') {
       localStorage.removeItem('raomysql_token')
       window.location.hash = '/login'
     } else {
@@ -56,7 +55,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     ]
   }
 
-  // Decode token to get username
   const getUsername = () => {
     try {
       const token = localStorage.getItem('raomysql_token') || ''
@@ -73,49 +71,48 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     } catch { return 'viewer' }
   }
 
+  const menuItems = [
+    { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: '/connections', icon: <DatabaseOutlined />, label: 'Connections' },
+    { key: '/sql', icon: <TableOutlined />, label: 'SQL Editor' },
+    { key: '/backups', icon: <CloudUploadOutlined />, label: 'Backups' },
+    { key: '/alerts', icon: <BellOutlined />, label: (
+      <span>Alerts{unreadAlerts > 0 && <Badge count={unreadAlerts} size="small" style={{ marginLeft: 6 }} />}</span>
+    )},
+    { key: '/tasks', icon: <SettingOutlined />, label: 'Tasks' },
+    { type: 'divider' as const },
+    { key: '/ai', icon: <RobotOutlined />, label: 'AI Services' },
+    { key: '/ai-settings', icon: <RobotOutlined />, label: 'AI Settings' },
+    { type: 'divider' as const },
+    { key: '/users', icon: <TeamOutlined />, label: 'User Management' },
+    { key: '/export', icon: <ExportOutlined />, label: 'Data Export' },
+    { key: '/audit', icon: <FileSearchOutlined />, label: 'Audit Log' },
+    { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
+  ]
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark" width={220}>
         <a href="./index.html" style={{
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontSize: 16,
-          fontWeight: 700,
-          letterSpacing: 1,
-          textDecoration: 'none',
-          cursor: 'pointer'
-        }} title="返回网站首页">
+          height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontSize: 16, fontWeight: 700, letterSpacing: 1,
+          textDecoration: 'none', cursor: 'pointer'
+        }}>
           {collapsed ? '🏠' : '🏠 RaoMySQL'}
         </a>
         <Menu
-          theme="dark"
-          mode="inline"
-          defaultSelectedKeys={['/dashboard']}
-          items={menuItems}
-          onClick={({ key }) => handleMenuClick(key)}
+          theme="dark" mode="inline" defaultSelectedKeys={['/dashboard']}
+          items={menuItems} onClick={({ key }) => handleMenuClick(key)}
           style={{ borderRight: 0 }}
         />
       </Sider>
       <Layout>
         <Header style={{
-          background: '#fff',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          background: '#fff', padding: '0 24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0'
         }}>
-          <a href="./index.html" style={{
-            color: '#1890ff',
-            fontSize: 14,
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4
-          }}>
+          <a href="./index.html" style={{ color: '#1890ff', fontSize: 14, textDecoration: 'none' }}>
             ← 返回首页
           </a>
           <Dropdown menu={{ ...userMenu, onClick: ({ key }) => handleMenuClick(key) }} placement="bottomRight">
@@ -134,7 +131,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
-function App() {
+export default function App() {
   const [token] = useState(() => localStorage.getItem('raomysql_token') || '')
   return (
     <ConfigProvider theme={{ algorithm: theme.defaultAlgorithm, token: { colorPrimary: '#1890ff' } }} locale={zhCN}>
@@ -150,6 +147,7 @@ function App() {
                   <Route path="/connections" element={<Connections />} />
                   <Route path="/sql" element={<SqlEditor />} />
                   <Route path="/backups" element={<Backups />} />
+                  <Route path="/alerts" element={<AlertsCenter />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/ai" element={<AIServices />} />
                   <Route path="/ai-settings" element={<AISettings />} />
@@ -167,5 +165,3 @@ function App() {
     </ConfigProvider>
   )
 }
-
-export default App
