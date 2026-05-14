@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Typography, Card } from 'antd'
-import { PlusOutlined, DeleteOutlined, EditOutlined, ExperimentOutlined, DatabaseOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Typography, Card, Drawer, Tree, Spin, Empty } from 'antd'
+import { PlusOutlined, DeleteOutlined, EditOutlined, ExperimentOutlined, DatabaseOutlined, TableOutlined, ColumnWidthOutlined, FolderOutlined } from '@ant-design/icons'
 import api from '../api'
 
-const { Title } = Typography
+const { Title, Text } = Typography
 
 export default function Connections() {
   const [data, setData] = useState<any[]>([])
@@ -11,6 +11,12 @@ export default function Connections() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
+
+  // Schema drawer state
+  const [schemaDrawerOpen, setSchemaDrawerOpen] = useState(false)
+  const [schemaLoading, setSchemaLoading] = useState(false)
+  const [schemaData, setSchemaData] = useState<any>(null)
+  const [selectedConnId, setSelectedConnId] = useState<number | null>(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -61,6 +67,47 @@ export default function Connections() {
     setModalOpen(true)
   }
 
+  // Schema functions
+  const openSchema = async (record: any) => {
+    setSelectedConnId(record.id)
+    setSchemaDrawerOpen(true)
+    setSchemaLoading(true)
+    setSchemaData(null)
+
+    try {
+      const res = await api.get(`/api/connections/${record.id}/schema`)
+      setSchemaData(res.data)
+    } catch (e: any) {
+      message.error('获取结构失败: ' + (e.response?.data?.detail || e.message))
+    } finally {
+      setSchemaLoading(false)
+    }
+  }
+
+  // Build tree data from schema
+  const buildTreeData = () => {
+    if (!schemaData?.tables) return []
+
+    const tables = schemaData.tables
+    return Object.entries(tables).map(([tableName, columns]: [string, any]) => ({
+      key: tableName,
+      title: <span><TableOutlined style={{ marginRight: 8, color: '#1890ff' }} /><Text strong>{tableName}</Text></span>,
+      children: (columns as any[]).map((col: any) => ({
+        key: `${tableName}.${col.Field}`,
+        title: (
+          <span style={{ fontSize: 13 }}>
+            <ColumnWidthOutlined style={{ marginRight: 6, color: '#52c41a' }} />
+            <Text code style={{ marginRight: 8 }}>{col.Field}</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>{col.Type}</Text>
+            {col.Key === 'PRI' && <Tag color="red" style={{ marginLeft: 4 }}>PK</Tag>}
+            {col.Key === 'MUL' && <Tag color="blue" style={{ marginLeft: 4 }}>IX</Tag>}
+            {col.Extra === 'auto_increment' && <Tag color="purple" style={{ marginLeft: 4 }}>AI</Tag>}
+          </span>
+        )
+      }))
+    }))
+  }
+
   const columns = [
     { title: '名称', dataIndex: 'name', render: (v: string) => <b>{v}</b> },
     { title: '主机', dataIndex: 'host' },
@@ -70,9 +117,10 @@ export default function Connections() {
     { title: 'SSL', dataIndex: 'ssl_enabled', render: (v: boolean) => <Tag color={v ? 'blue' : 'default'}>{v ? '是' : '否'}</Tag> },
     {
       title: '操作',
-      width: 200,
+      width: 280,
       render: (_: any, record: any) => (
         <Space>
+          <Button size="small" icon={<TableOutlined />} onClick={() => openSchema(record)}>结构</Button>
           <Button size="small" icon={<ExperimentOutlined />} onClick={() => handleTest(record.id)}>测试</Button>
           <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
@@ -82,6 +130,10 @@ export default function Connections() {
       )
     }
   ]
+
+  // Stats for schema drawer header
+  const tableCount = schemaData?.tables ? Object.keys(schemaData.tables).length : 0
+  const columnCount = schemaData?.tables ? Object.values(schemaData.tables).reduce((sum: number, cols: any) => sum + (cols as any[]).length, 0) : 0
 
   return (
     <div>
@@ -93,6 +145,7 @@ export default function Connections() {
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
 
+      {/* Add/Edit Modal */}
       <Modal
         title={editingId ? '编辑连接' : '添加数据库连接'}
         open={modalOpen}
@@ -136,6 +189,37 @@ export default function Connections() {
           </Space>
         </Form>
       </Modal>
+
+      {/* Schema Drawer */}
+      <Drawer
+        title={
+          <span>
+            <DatabaseOutlined style={{ marginRight: 8 }} />
+            数据库结构
+            {schemaData && <Text type="secondary" style={{ marginLeft: 12 }}>({tableCount} 表 / {columnCount} 列)</Text>}
+          </span>
+        }
+        placement="right"
+        width={600}
+        open={schemaDrawerOpen}
+        onClose={() => setSchemaDrawerOpen(false)}
+      >
+        {schemaLoading ? (
+          <div style={{ textAlign: 'center', padding: 48 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>加载中...</div>
+          </div>
+        ) : schemaData ? (
+          <Tree
+            showLine={{ showLeafIcon: false }}
+            defaultExpandAll
+            treeData={buildTreeData()}
+            style={{ fontSize: 13 }}
+          />
+        ) : (
+          <Empty description="无数据" />
+        )}
+      </Drawer>
     </div>
   )
 }
